@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <h3>Portfolio</h3>
+      <ul class="nav-link">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+
+    <!-- Container -->
+    <section id="home">
+      <div class="container">
+        <img class="left-container" src="./src/logo.jpg" alt="Avatar icon" />
+        <div class="right-container">
+          <h1>Shubham Aryal</h1>
+          <p>I'm a Frontend Developer.</p>
+          <a href="https://github.com/shubhamaryal/"><button>Github</button></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about">
+      <div class="about-container">
+        <h1>About Me</h1>
+        <h2>Education</h2>
+        <table class="education-table">
+          <thead>
+            <tr>
+              <th>Degree</th>
+              <th>Institution</th>
+              <th>Marks</th>
+              <th>Passout Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SEE</td>
+              <td>Everest English Boarding Secondary School</td>
+              <td>3.75</td>
+              <td>2077</td>
+            </tr>
+            <tr>
+              <td>+2</td>
+              <td>Everest English Boarding Secondary School</td>
+              <td>3.39</td>
+              <td>2080</td>
+            </tr>
+            <tr>
+              <td>Bachelors</td>
+              <td>Kantipur Engineering College</td>
+              <td>N/A</td>
+              <td>N/A</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section id="projects">
+      <div class="projects-container">
+        <h1>Projects</h1>
+        <div class="project-box">
+          <h3>Class Routine</h3>
+          <p>A simple web application to check class routines.</p>
+          <a href="./routes/routine.html"><button>View Project</button></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact">
+      <div class="contact-container">
+        <h1>Contact Me</h1>
+        <form class="contact-form" id="contactForm">
+          <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" />
+          </div>
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" />
+          </div>
+          <div class="form-group">
+            <label for="message">Message:</label>
+            <textarea id="message" rows="6"></textarea>
+          </div>
+          <p id="error" style="color: red; display: none"></p>
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+    </section>
+  </body>
+  <script src="script.js"></script>
+</html>

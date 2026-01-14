@@ -1,0 +1,13 @@
+Average Marks: 82.25
+Highest Marks: 95
+Lowest Marks: 66
+Students with distinction: 5
+
+List of gardes: B
+A
+A+
+C
+A
+A+
+B
+A

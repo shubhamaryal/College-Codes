@@ -1,0 +1,1 @@
+shubham aryal, 58, computer, 5th, [80.0, 80.0, 80.0, 80.0, 90.0], 82.00%, Pass

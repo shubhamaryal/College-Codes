@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="OSMTracker for Android™ - https://github.com/labexp/osmtracker-android" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd ">
+	<metadata>
+		<name>2025-08-17_12-48-16</name>
+		<keywords>Kathmandu</keywords>
+		<keywords>Motorcycle</keywords>
+		<desc>KEC Dhapakhel to Kathmandu</desc>
+	</metadata>
+	<trk>
+		<name><![CDATA[Tracked with OSMTracker for Android™]]></name>
+		<trkseg>
+			<trkpt lat="27.63719687" lon="85.3332576">
+				<ele>1287.955078125</ele>
+				<time>2025-08-17T07:03:22Z</time>
+				<extensions>
+					<speed>0.0</speed>
+				</extensions>
+			
+		</trkseg>
+	</trk>
+</gpx>
