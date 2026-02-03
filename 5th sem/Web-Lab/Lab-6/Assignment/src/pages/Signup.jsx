@@ -6,9 +6,7 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // const handleSignup = (e) => {
   const handleSignup = () => {
-    // e.preventDefault();
     console.log("Email:", email);
     console.log("Password:", password);
     navigate("/todo");
