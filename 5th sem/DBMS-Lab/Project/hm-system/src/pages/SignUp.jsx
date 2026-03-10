@@ -30,8 +30,6 @@ const SignUp = () => {
                 password: data.password,
             };
 
-            console.log("Sending payload:", payload);
-
             const response = await fetch(`${BACKEND_URI}user/signup`, {
                 method: "POST",
                 headers: {
@@ -40,10 +38,7 @@ const SignUp = () => {
                 body: JSON.stringify(payload),
             });
 
-            console.log("Response status:", response.status);
-
             const result = await response.json();
-            console.log("Response data:", result);
 
             if (!response.ok) {
                 throw new Error(
@@ -61,7 +56,6 @@ const SignUp = () => {
             navigate("/");
         } catch (err) {
             setError(err.message || "An error occurred during registration");
-            console.error("Signup error:", err);
         } finally {
             setIsSubmitting(false);
         }

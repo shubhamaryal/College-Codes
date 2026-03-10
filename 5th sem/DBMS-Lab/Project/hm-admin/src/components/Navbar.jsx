@@ -3,7 +3,6 @@ import {
     LayoutDashboard,
     BedDouble,
     CalendarCheck,
-    Users,
     UserCog,
     LogOut,
     Menu,
@@ -30,12 +29,6 @@ const links = [
         label: "Bookings",
         icon: CalendarCheck,
         desc: "View reservations",
-    },
-    {
-        to: "/customers",
-        label: "Customers",
-        icon: Users,
-        desc: "Guest accounts",
     },
     { to: "/staff", label: "Staff", icon: UserCog, desc: "Team members" },
 ];

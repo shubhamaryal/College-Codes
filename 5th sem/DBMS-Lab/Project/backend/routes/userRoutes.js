@@ -196,27 +196,10 @@ router.get("/booking/rooms", async (req, res) => {
             return {
                 id: room.id,
                 roomNumber: room.room_number,
-                title: room.room_name,
                 roomName: room.room_name,
                 roomType: room.room_type,
-                description: room.description,
                 price: room.price,
-                imageUrl: room.image_url || "/images/room-placeholder.jpg",
-                isAvailable: room.is_available,
-                // Occupancy as object — the room detail pages access .maxOccupancy, .adult, etc.
-                occupancy: {
-                    maxOccupancy: room.max_occupancy || 2,
-                    adult: room.max_occupancy || 2,
-                    children: 0,
-                },
-                // Raw amenities object — the room detail pages read .wifi, .beds.king, etc.
                 amenities: amenitiesObj,
-                // Hardcoded ratings — no review system in this project
-                rating: "4.5",
-                ratingText: "Excellent",
-                ratingBg: "bg-green-100",
-                ratingColor: "text-green-500",
-                reviews: "120",
             };
         });
 
@@ -334,10 +317,9 @@ router.get("/bookinghistory", async (req, res) => {
         // JOIN with rooms table to get room name and type
         const [bookings] = await pool.query(
             `SELECT
-         b.id, b.check_in, b.check_out, b.guests,
-         b.customer_name, b.total_amount, b.payment_method,
-         b.status, b.created_at,
-         r.room_name, r.room_type, r.room_number
+         b.id, b.check_in, b.check_out,
+         b.total_amount, b.status,
+         r.room_type
        FROM bookings b
        LEFT JOIN rooms r ON b.room_id = r.id
        WHERE b.user_id = ?
@@ -350,15 +332,11 @@ router.get("/bookinghistory", async (req, res) => {
             id: String(b.id),
             bookingId: String(b.id),
             roomType: b.room_type,
-            roomName: b.room_name,
-            roomNumber: b.room_number,
             checkIn: b.check_in,
             checkOut: b.check_out,
             amount: b.total_amount,
             totalAmount: b.total_amount,
             status: b.status,
-            paymentMethod: b.payment_method,
-            createdAt: b.created_at,
         }));
 
         res.json(formatted);

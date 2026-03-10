@@ -7,7 +7,6 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import RoomManagement from "./pages/RoomManagement";
 import BookingManagement from "./pages/BookingManagement";
-import CustomerManagement from "./pages/CustomerManagement";
 import StaffManagement from "./pages/StaffManagement";
 
 function ProtectedRoute({ children }) {
@@ -39,14 +38,6 @@ const router = createBrowserRouter([
         element: (
             <ProtectedRoute>
                 <BookingManagement />
-            </ProtectedRoute>
-        ),
-    },
-    {
-        path: "/customers",
-        element: (
-            <ProtectedRoute>
-                <CustomerManagement />
             </ProtectedRoute>
         ),
     },

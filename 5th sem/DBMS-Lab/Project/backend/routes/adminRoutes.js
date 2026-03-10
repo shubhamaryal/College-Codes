@@ -6,7 +6,6 @@
 //
 //   ROOMS:
 //     GET    /admin/rooms/getroomdetails              → Get all rooms
-//     GET    /admin/rooms/filterroom                   → Filter rooms
 //     POST   /admin/rooms/addroom                      → Add a new room
 //     GET    /admin/rooms/updateroomdetails/:roomNumber → Get single room
 //     PATCH  /admin/rooms/updateroomdetails/:roomNumber → Update a room
@@ -53,19 +52,9 @@ function formatRoomForAdmin(room) {
         roomNumber: String(room.room_number),
         roomName: room.room_name,
         roomType: room.room_type,
-        description: room.description || "",
         price: String(room.price),
         isAvailable: Boolean(room.is_available),
-        // Admin frontend uses "status" to show available/occupied badge
-        status: room.is_available ? "available" : "occupied",
-        occupancy: {
-            maxOccupancy: room.max_occupancy || 2,
-            adult: room.max_occupancy || 2,
-            children: 0,
-        },
         amenities: amenitiesObj,
-        imageUrl: room.image_url || "",
-        createdAt: room.created_at,
     };
 }
 
@@ -148,50 +137,10 @@ router.get("/rooms/getroomdetails", async (req, res) => {
 });
 
 // ============================================================
-// GET /admin/rooms/filterroom - Get rooms with optional filters
-// ============================================================
-// Query params: ?roomType=Classic&status=available
-// Response:     Array of room objects (filtered)
-// ============================================================
-router.get("/rooms/filterroom", async (req, res) => {
-    try {
-        const { roomType, status } = req.query;
-
-        // Start with base query, then add filters dynamically
-        let query = "SELECT * FROM rooms WHERE 1=1";
-        const params = [];
-
-        // Filter by room type if provided
-        if (roomType && roomType !== "all") {
-            query += " AND room_type = ?";
-            params.push(roomType);
-        }
-
-        // Filter by availability status if provided
-        if (status && status !== "all") {
-            if (status === "available") {
-                query += " AND is_available = TRUE";
-            } else if (status === "occupied" || status === "reserved") {
-                query += " AND is_available = FALSE";
-            }
-        }
-
-        query += " ORDER BY room_number";
-
-        const [rooms] = await pool.query(query, params);
-        const formatted = rooms.map((room) => formatRoomForAdmin(room));
-        res.json(formatted);
-    } catch (error) {
-        console.error("Error filtering rooms:", error);
-        res.status(500).json({ message: "Failed to filter rooms." });
-    }
-});
-
-// ============================================================
 // POST /admin/rooms/addroom - Add a new room
 // ============================================================
-// Request body: { roomNumber, roomName, roomType, description,
-//                 price, isAvailable, occupancy, amenities }
+// Request body: { roomNumber, roomName, roomType,
+//                 price, isAvailable, amenities }
 // Response:     { message, roomId }
 // ============================================================
 router.post("/rooms/addroom", async (req, res) => {
@@ -200,11 +149,9 @@ router.post("/rooms/addroom", async (req, res) => {
             roomNumber,
             roomName,
             roomType,
-            description,
             price,
             isAvailable,
             status,
-            occupancy,
             amenities,
         } = req.body;
 
@@ -217,7 +164,6 @@ router.post("/rooms/addroom", async (req, res) => {
 
         // Store amenities object as a JSON string in the database
         const amenitiesJson = amenities ? JSON.stringify(amenities) : null;
-        const maxOccupancy = occupancy?.maxOccupancy || 2;
 
         // Determine availability from either isAvailable or status field
         let available = isAvailable !== false;
@@ -227,17 +173,15 @@ router.post("/rooms/addroom", async (req, res) => {
 
         const [result] = await pool.query(
             `INSERT INTO rooms
-        (room_number, room_name, room_type, description, price,
-         is_available, max_occupancy, amenities)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (room_number, room_name, room_type, price,
+         is_available, amenities)
+       VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 roomNumber,
                 roomName,
                 roomType || "Classic",
-                description || "",
                 price,
                 available,
-                maxOccupancy,
                 amenitiesJson,
             ],
         );
@@ -294,11 +238,9 @@ router.patch("/rooms/updateroomdetails/:roomNumber", async (req, res) => {
         const {
             roomName,
             roomType,
-            description,
             price,
             isAvailable,
             status,
-            occupancy,
             amenities,
         } = req.body;
 
@@ -310,7 +252,6 @@ router.patch("/rooms/updateroomdetails/:roomNumber", async (req, res) => {
 
         // Convert amenities object to JSON string if provided
         const amenitiesJson = amenities ? JSON.stringify(amenities) : undefined;
-        const maxOccupancy = occupancy?.maxOccupancy;
 
         // Build UPDATE query dynamically (only update fields that were sent)
         const updates = [];
@@ -324,10 +265,6 @@ router.patch("/rooms/updateroomdetails/:roomNumber", async (req, res) => {
             updates.push("room_type = ?");
             params.push(roomType);
         }
-        if (description !== undefined) {
-            updates.push("description = ?");
-            params.push(description);
-        }
         if (price !== undefined) {
             updates.push("price = ?");
             params.push(price);
@@ -335,10 +272,6 @@ router.patch("/rooms/updateroomdetails/:roomNumber", async (req, res) => {
         if (available !== undefined) {
             updates.push("is_available = ?");
             params.push(available);
-        }
-        if (maxOccupancy !== undefined) {
-            updates.push("max_occupancy = ?");
-            params.push(maxOccupancy);
         }
         if (amenitiesJson !== undefined) {
             updates.push("amenities = ?");
@@ -428,10 +361,9 @@ router.get("/bookings/getbookinghistory", async (req, res) => {
         // The frontend expects nested objects: booking.customer.name, booking.room.id
         const formatted = bookings.map((b) => ({
             id: String(b.id),
-            customer: {
-                name: b.customer_name || b.user_name || "N/A",
-            },
             customerName: b.customer_name || b.user_name || "N/A",
+            customerEmail: b.customer_email || "N/A",
+            customerPhone: b.customer_phone || "N/A",
             room: {
                 id: String(b.room_number || ""),
                 name: b.room_name || "N/A",
@@ -440,16 +372,7 @@ router.get("/bookings/getbookinghistory", async (req, res) => {
             checkOut: b.check_out,
             guests: b.guests,
             totalAmount: b.total_amount,
-            paymentMethod: b.payment_method,
-            // Derive payment status from booking status
-            paymentStatus:
-                b.status === "completed"
-                    ? "paid"
-                    : b.status === "cancelled"
-                      ? "refunded"
-                      : "pending",
             status: b.status,
-            createdAt: b.created_at,
         }));
 
         res.json(formatted);
@@ -462,14 +385,14 @@ router.get("/bookings/getbookinghistory", async (req, res) => {
 // ============================================================
 // PATCH /admin/bookings/updatebooking/:id - Update a booking
 // ============================================================
-// Request body: { status, checkIn, checkOut, guests }
+// Request body: { status, customerName, customerEmail, customerPhone, checkIn, checkOut, guests, totalAmount }
 //               (only send the fields you want to change)
 // Response:     { message }
 // ============================================================
 router.patch("/bookings/updatebooking/:id", async (req, res) => {
     try {
         const bookingId = req.params.id;
-        const { status, checkIn, checkOut, guests } = req.body;
+        const { status, customerName, customerEmail, customerPhone, checkIn, checkOut, guests, totalAmount } = req.body;
 
         // Build dynamic UPDATE query
         const updates = [];
@@ -478,6 +401,18 @@ router.patch("/bookings/updatebooking/:id", async (req, res) => {
         if (status !== undefined) {
             updates.push("status = ?");
             params.push(status);
+        }
+        if (customerName !== undefined) {
+            updates.push("customer_name = ?");
+            params.push(customerName);
+        }
+        if (customerEmail !== undefined) {
+            updates.push("customer_email = ?");
+            params.push(customerEmail);
+        }
+        if (customerPhone !== undefined) {
+            updates.push("customer_phone = ?");
+            params.push(customerPhone);
         }
         if (checkIn !== undefined) {
             updates.push("check_in = ?");
@@ -490,6 +425,10 @@ router.patch("/bookings/updatebooking/:id", async (req, res) => {
         if (guests !== undefined) {
             updates.push("guests = ?");
             params.push(guests);
+        }
+        if (totalAmount !== undefined) {
+            updates.push("total_amount = ?");
+            params.push(totalAmount);
         }
 
         if (updates.length === 0) {
@@ -596,7 +535,6 @@ router.get("/users/getallusers", async (req, res) => {
             name: u.full_name,
             email: u.email,
             phone: u.phone || "N/A",
-            joinDate: u.created_at,
             totalBookings: u.total_bookings,
             totalSpent: u.total_spent,
         }));
@@ -710,7 +648,6 @@ router.get("/staff/getstaffdetails", async (req, res) => {
             staffname: s.staff_name,
             position: s.position,
             email: s.email || "",
-            createdAt: s.created_at,
         }));
 
         res.json(formatted);

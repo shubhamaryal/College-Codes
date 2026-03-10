@@ -82,7 +82,6 @@ function RoomManagement() {
                 price: Number(form.price),
                 isAvailable: form.isAvailable,
                 amenities,
-                occupancy: { maxOccupancy: 2 },
             };
 
             if (modal === "add") {

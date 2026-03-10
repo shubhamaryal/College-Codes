@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import Navbar from "../components/NavBar";
-import { Eye, EyeOff, CreditCard, Clock, User, Lock } from "lucide-react";
+import { Eye, EyeOff, Clock, User, Lock } from "lucide-react";
 
 const ProfilePage = () => {
     const [singleBookingDetails, setSingleBookingDetails] = useState(null);
@@ -33,12 +33,6 @@ const ProfilePage = () => {
         formState: { errors: errorsPassword },
         watch: watchPassword,
         reset: resetPassword,
-    } = useForm();
-
-    const {
-        register: registerCard,
-        handleSubmit: handleSubmitCard,
-        formState: { errors: errorsCard },
     } = useForm();
 
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -133,7 +127,6 @@ const ProfilePage = () => {
 
             const data = await response.json();
             setSingleBookingDetails(data);
-            console.log("Booking Details:", data);
         } catch (error) {
             console.error("Error fetching booking details:", error);
             setBookingsError(
@@ -145,7 +138,6 @@ const ProfilePage = () => {
     };
 
     const onSubmitPersonal = (data) => {
-        console.log("Personal info updated:", data);
         localStorage.setItem("userName", data.fullName);
         localStorage.setItem("userEmail", data.email);
         localStorage.setItem("userPhone", data.phone);
@@ -213,11 +205,6 @@ const ProfilePage = () => {
         }
     };
 
-    const onSubmitCard = (data) => {
-        console.log("Card added:", data);
-        alert("Credit card added successfully!");
-    };
-
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -267,17 +254,6 @@ const ProfilePage = () => {
                                     >
                                         <Lock size={20} />
                                         <span>Change Password</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab("payment")}
-                                        className={`flex items-center space-x-3 w-full p-3 rounded-md transition ${
-                                            activeTab === "payment"
-                                                ? "bg-amber-50 text-amber-500"
-                                                : "hover:bg-gray-100"
-                                        }`}
-                                    >
-                                        <CreditCard size={20} />
-                                        <span>Payment Methods</span>
                                     </button>
                                     <button
                                         onClick={() => setActiveTab("bookings")}
@@ -607,185 +583,6 @@ const ProfilePage = () => {
                                                     : "Update Password"}
                                             </button>
                                         </form>
-                                    </div>
-                                )}
-
-                                {/* Payment Methods */}
-                                {activeTab === "payment" && (
-                                    <div>
-                                        <h2 className="text-2xl font-semibold mb-6">
-                                            Payment Methods
-                                        </h2>
-                                        <div className="mb-8">
-                                            <h3 className="text-lg font-medium mb-4">
-                                                Saved Cards
-                                            </h3>
-                                            <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
-                                                <p className="text-gray-500">
-                                                    You don't have any saved
-                                                    payment methods yet.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <h3 className="text-lg font-medium mb-4">
-                                                Add New Card
-                                            </h3>
-                                            <form
-                                                onSubmit={handleSubmitCard(
-                                                    onSubmitCard,
-                                                )}
-                                            >
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                                    <div className="md:col-span-2">
-                                                        <label className="block text-gray-700 mb-2">
-                                                            Card Number
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            className={`w-full border ${
-                                                                errorsCard.cardNumber
-                                                                    ? "border-red-500"
-                                                                    : "border-gray-300"
-                                                            } rounded-md p-3`}
-                                                            placeholder="1234 5678 9012 3456"
-                                                            {...registerCard(
-                                                                "cardNumber",
-                                                                {
-                                                                    required:
-                                                                        "Card number is required",
-                                                                    pattern: {
-                                                                        value: /^[0-9]{13,19}$/,
-                                                                        message:
-                                                                            "Please enter a valid card number",
-                                                                    },
-                                                                },
-                                                            )}
-                                                        />
-                                                        {errorsCard.cardNumber && (
-                                                            <p className="text-red-500 text-sm mt-1">
-                                                                {
-                                                                    errorsCard
-                                                                        .cardNumber
-                                                                        .message
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-gray-700 mb-2">
-                                                            Cardholder Name
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            className={`w-full border ${
-                                                                errorsCard.cardholderName
-                                                                    ? "border-red-500"
-                                                                    : "border-gray-300"
-                                                            } rounded-md p-3`}
-                                                            placeholder="John Doe"
-                                                            {...registerCard(
-                                                                "cardholderName",
-                                                                {
-                                                                    required:
-                                                                        "Cardholder name is required",
-                                                                },
-                                                            )}
-                                                        />
-                                                        {errorsCard.cardholderName && (
-                                                            <p className="text-red-500 text-sm mt-1">
-                                                                {
-                                                                    errorsCard
-                                                                        .cardholderName
-                                                                        .message
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="block text-gray-700 mb-2">
-                                                                Expiry Date
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                className={`w-full border ${
-                                                                    errorsCard.expiryDate
-                                                                        ? "border-red-500"
-                                                                        : "border-gray-300"
-                                                                } rounded-md p-3`}
-                                                                placeholder="MM/YY"
-                                                                {...registerCard(
-                                                                    "expiryDate",
-                                                                    {
-                                                                        required:
-                                                                            "Expiry date is required",
-                                                                        pattern:
-                                                                            {
-                                                                                value: /^(0[1-9]|1[0-2])\/\d{2}$/,
-                                                                                message:
-                                                                                    "Please enter a valid expiry date (MM/YY)",
-                                                                            },
-                                                                    },
-                                                                )}
-                                                            />
-                                                            {errorsCard.expiryDate && (
-                                                                <p className="text-red-500 text-sm mt-1">
-                                                                    {
-                                                                        errorsCard
-                                                                            .expiryDate
-                                                                            .message
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-gray-700 mb-2">
-                                                                CVV
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                className={`w-full border ${
-                                                                    errorsCard.cvv
-                                                                        ? "border-red-500"
-                                                                        : "border-gray-300"
-                                                                } rounded-md p-3`}
-                                                                placeholder="123"
-                                                                {...registerCard(
-                                                                    "cvv",
-                                                                    {
-                                                                        required:
-                                                                            "CVV is required",
-                                                                        pattern:
-                                                                            {
-                                                                                value: /^\d{3,4}$/,
-                                                                                message:
-                                                                                    "Please enter a valid CVV",
-                                                                            },
-                                                                    },
-                                                                )}
-                                                            />
-                                                            {errorsCard.cvv && (
-                                                                <p className="text-red-500 text-sm mt-1">
-                                                                    {
-                                                                        errorsCard
-                                                                            .cvv
-                                                                            .message
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="submit"
-                                                    className="bg-amber-500 text-white py-3 px-6 rounded-md font-medium hover:bg-amber-600 transition-colors"
-                                                >
-                                                    Add Card
-                                                </button>
-                                            </form>
-                                        </div>
                                     </div>
                                 )}
 

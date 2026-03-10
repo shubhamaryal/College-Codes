@@ -108,7 +108,7 @@ function Dashboard() {
             bg: "bg-pink-50",
             iconBg: "bg-pink-100",
             color: "text-pink-600",
-            link: "/customers",
+            link: "/bookings",
         },
         {
             label: "Revenue",

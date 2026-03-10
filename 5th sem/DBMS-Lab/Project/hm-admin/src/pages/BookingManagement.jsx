@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-import { Pencil, Trash2, X, CalendarCheck, ArrowRight } from "lucide-react";
+import {
+    Pencil,
+    Trash2,
+    X,
+    CalendarCheck,
+    ArrowRight,
+    Mail,
+    Phone,
+    BedDouble,
+} from "lucide-react";
 
 const API = "http://localhost:8000/admin";
 
@@ -8,7 +17,7 @@ function BookingManagement() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(null);
-    const [editStatus, setEditStatus] = useState("");
+    const [editForm, setEditForm] = useState({});
     const [saving, setSaving] = useState(false);
     const [filter, setFilter] = useState("all");
 
@@ -36,13 +45,26 @@ function BookingManagement() {
                   year: "numeric",
               })
             : "—";
-    const shortDate = (d) =>
-        d
-            ? new Date(d).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-              })
-            : "—";
+
+    const toInputDate = (d) => {
+        if (!d) return "";
+        const dt = new Date(d);
+        return dt.toISOString().split("T")[0];
+    };
+
+    const openEdit = (b) => {
+        setEditForm({
+            customerName: b.customerName || "",
+            customerEmail: b.customerEmail === "N/A" ? "" : b.customerEmail || "",
+            customerPhone: b.customerPhone === "N/A" ? "" : b.customerPhone || "",
+            checkIn: toInputDate(b.checkIn),
+            checkOut: toInputDate(b.checkOut),
+            guests: b.guests || 1,
+            totalAmount: b.totalAmount || 0,
+            status: b.status || "pending",
+        });
+        setEditing(b);
+    };
 
     const handleUpdate = async () => {
         setSaving(true);
@@ -52,7 +74,16 @@ function BookingManagement() {
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ status: editStatus }),
+                    body: JSON.stringify({
+                        customerName: editForm.customerName,
+                        customerEmail: editForm.customerEmail,
+                        customerPhone: editForm.customerPhone,
+                        checkIn: editForm.checkIn,
+                        checkOut: editForm.checkOut,
+                        guests: Number(editForm.guests),
+                        totalAmount: Number(editForm.totalAmount),
+                        status: editForm.status,
+                    }),
                 },
             );
             if (!res.ok) {
@@ -87,6 +118,15 @@ function BookingManagement() {
         if (s === "confirmed") return "bg-blue-100 text-blue-700";
         return "bg-amber-100 text-amber-700";
     };
+
+    const avatarColors = [
+        "bg-blue-100 text-blue-600",
+        "bg-violet-100 text-violet-600",
+        "bg-pink-100 text-pink-600",
+        "bg-emerald-100 text-emerald-600",
+        "bg-amber-100 text-amber-600",
+        "bg-sky-100 text-sky-600",
+    ];
 
     const filtered =
         filter === "all"
@@ -153,18 +193,20 @@ function BookingManagement() {
                         <p className="text-gray-500">No bookings found.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map((b) => (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {filtered.map((b, i) => (
                             <div
                                 key={b.id}
                                 className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                             >
                                 <div className="p-5">
-                                    {/* Top row: customer + status */}
-                                    <div className="flex items-start justify-between mb-3">
+                                    {/* Top row: customer avatar + name + status */}
+                                    <div className="flex items-start justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                                <span className="text-sm font-bold text-gray-500">
+                                            <div
+                                                className={`w-10 h-10 rounded-full flex items-center justify-center ${avatarColors[i % avatarColors.length]}`}
+                                            >
+                                                <span className="text-sm font-bold">
                                                     {b.customerName
                                                         ?.charAt(0)
                                                         ?.toUpperCase() || "?"}
@@ -186,24 +228,62 @@ function BookingManagement() {
                                         </span>
                                     </div>
 
-                                    {/* Room info */}
-                                    <div className="bg-gray-50 rounded-xl p-3 mb-3">
-                                        <p className="text-sm font-medium text-gray-900">
-                                            {b.room?.name || "N/A"}
-                                        </p>
-                                        <p className="text-xs text-gray-400">
-                                            Room #{b.room?.id}
-                                        </p>
+                                    {/* Customer contact info */}
+                                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500 mb-4">
+                                        <div className="flex items-center gap-1.5">
+                                            <Mail
+                                                size={13}
+                                                className="text-gray-400"
+                                            />
+                                            <span className="truncate">
+                                                {b.customerEmail}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Phone
+                                                size={13}
+                                                className="text-gray-400"
+                                            />
+                                            <span>{b.customerPhone}</span>
+                                        </div>
                                     </div>
 
-                                    {/* Dates */}
-                                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                                        <span>{shortDate(b.checkIn)}</span>
-                                        <ArrowRight
-                                            size={13}
-                                            className="text-gray-400"
-                                        />
-                                        <span>{shortDate(b.checkOut)}</span>
+                                    {/* Room + Dates row */}
+                                    <div className="flex flex-wrap gap-3">
+                                        <div className="flex-1 min-w-[140px] bg-gray-50 rounded-xl p-3">
+                                            <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+                                                <BedDouble size={13} />
+                                                <span className="text-[10px] font-medium uppercase tracking-wide">
+                                                    Room
+                                                </span>
+                                            </div>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {b.room?.name || "N/A"}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                Room #{b.room?.id}
+                                            </p>
+                                        </div>
+                                        <div className="flex-1 min-w-[140px] bg-gray-50 rounded-xl p-3">
+                                            <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+                                                <CalendarCheck size={13} />
+                                                <span className="text-[10px] font-medium uppercase tracking-wide">
+                                                    Stay
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-sm text-gray-800">
+                                                <span>
+                                                    {fmtDate(b.checkIn)}
+                                                </span>
+                                                <ArrowRight
+                                                    size={12}
+                                                    className="text-gray-400"
+                                                />
+                                                <span>
+                                                    {fmtDate(b.checkOut)}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -214,12 +294,9 @@ function BookingManagement() {
                                     </span>
                                     <div className="flex items-center gap-1.5">
                                         <button
-                                            onClick={() => {
-                                                setEditing(b);
-                                                setEditStatus(b.status);
-                                            }}
+                                            onClick={() => openEdit(b)}
                                             className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                                            title="Edit status"
+                                            title="Edit booking"
                                         >
                                             <Pencil size={15} />
                                         </button>
@@ -237,13 +314,13 @@ function BookingManagement() {
                     </div>
                 )}
 
-                {/* Edit Status Modal */}
+                {/* Edit Booking Modal */}
                 {editing && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 mx-4 border border-gray-200">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 mx-4 border border-gray-200 max-h-[90vh] overflow-y-auto">
                             <div className="flex justify-between items-center mb-5">
                                 <h2 className="text-lg font-bold text-gray-900">
-                                    Update Booking #{editing.id}
+                                    Edit Booking #{editing.id}
                                 </h2>
                                 <button
                                     onClick={() => setEditing(null)}
@@ -252,23 +329,134 @@ function BookingManagement() {
                                     <X size={18} />
                                 </button>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Status
-                                </label>
-                                <select
-                                    value={editStatus}
-                                    onChange={(e) =>
-                                        setEditStatus(e.target.value)
-                                    }
-                                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                >
-                                    <option value="pending">Pending</option>
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
+
+                            <div className="space-y-4">
+                                {/* Customer Name */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Customer Name
+                                    </label>
+                                    <input
+                                        value={editForm.customerName}
+                                        onChange={(e) =>
+                                            setEditForm((p) => ({ ...p, customerName: e.target.value }))
+                                        }
+                                        className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    />
+                                </div>
+
+                                {/* Email & Phone row */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={editForm.customerEmail}
+                                            onChange={(e) =>
+                                                setEditForm((p) => ({ ...p, customerEmail: e.target.value }))
+                                            }
+                                            className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            Phone
+                                        </label>
+                                        <input
+                                            value={editForm.customerPhone}
+                                            onChange={(e) =>
+                                                setEditForm((p) => ({ ...p, customerPhone: e.target.value }))
+                                            }
+                                            className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Check-in & Check-out row */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            Check-in
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={editForm.checkIn}
+                                            onChange={(e) =>
+                                                setEditForm((p) => ({ ...p, checkIn: e.target.value }))
+                                            }
+                                            className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            Check-out
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={editForm.checkOut}
+                                            onChange={(e) =>
+                                                setEditForm((p) => ({ ...p, checkOut: e.target.value }))
+                                            }
+                                            className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Guests & Total Amount row */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            Guests
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={editForm.guests}
+                                            onChange={(e) =>
+                                                setEditForm((p) => ({ ...p, guests: e.target.value }))
+                                            }
+                                            className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            Total Amount (₹)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={editForm.totalAmount}
+                                            onChange={(e) =>
+                                                setEditForm((p) => ({ ...p, totalAmount: e.target.value }))
+                                            }
+                                            className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Status */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Status
+                                    </label>
+                                    <select
+                                        value={editForm.status}
+                                        onChange={(e) =>
+                                            setEditForm((p) => ({ ...p, status: e.target.value }))
+                                        }
+                                        className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
                             </div>
+
                             <div className="flex gap-3 mt-6">
                                 <button
                                     onClick={() => setEditing(null)}
@@ -281,7 +469,7 @@ function BookingManagement() {
                                     disabled={saving}
                                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition shadow-sm"
                                 >
-                                    {saving ? "Saving..." : "Update Status"}
+                                    {saving ? "Saving..." : "Save Changes"}
                                 </button>
                             </div>
                         </div>
