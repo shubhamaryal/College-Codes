@@ -132,7 +132,8 @@ function Dashboard() {
     const statusStyle = (s) => {
         if (s === "completed") return "bg-emerald-100 text-emerald-700";
         if (s === "cancelled") return "bg-red-100 text-red-700";
-        if (s === "confirmed") return "bg-blue-100 text-blue-700";
+        if (s === "approved") return "bg-blue-100 text-blue-700";
+        if (s === "checked_in") return "bg-cyan-100 text-cyan-700";
         return "bg-amber-100 text-amber-700";
     };
 

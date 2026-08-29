@@ -720,11 +720,9 @@ const ProfilePage = () => {
                                                                                     "completed"
                                                                                     ? "bg-green-100 text-green-800"
                                                                                     : booking.status ===
-                                                                                            "Upcoming" ||
+                                                                                            "approved" ||
                                                                                         booking.status ===
-                                                                                            "upcoming" ||
-                                                                                        booking.status ===
-                                                                                            "confirmed"
+                                                                                            "checked_in"
                                                                                       ? "bg-blue-100 text-blue-800"
                                                                                       : booking.status ===
                                                                                           "cancelled"

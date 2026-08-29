@@ -235,14 +235,8 @@ router.get("/rooms/updateroomdetails/:roomNumber", async (req, res) => {
 // ============================================================
 router.patch("/rooms/updateroomdetails/:roomNumber", async (req, res) => {
     try {
-        const {
-            roomName,
-            roomType,
-            price,
-            isAvailable,
-            status,
-            amenities,
-        } = req.body;
+        const { roomName, roomType, price, isAvailable, status, amenities } =
+            req.body;
 
         // Determine availability from isAvailable or status
         let available = isAvailable;
@@ -392,7 +386,16 @@ router.get("/bookings/getbookinghistory", async (req, res) => {
 router.patch("/bookings/updatebooking/:id", async (req, res) => {
     try {
         const bookingId = req.params.id;
-        const { status, customerName, customerEmail, customerPhone, checkIn, checkOut, guests, totalAmount } = req.body;
+        const {
+            status,
+            customerName,
+            customerEmail,
+            customerPhone,
+            checkIn,
+            checkOut,
+            guests,
+            totalAmount,
+        } = req.body;
 
         // Build dynamic UPDATE query
         const updates = [];

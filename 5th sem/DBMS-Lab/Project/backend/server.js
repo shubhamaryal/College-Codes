@@ -60,10 +60,28 @@ app.get("/", (req, res) => {
 
 // ==================== START SERVER ====================
 
+const pool = require("./config/db");
+
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`\n===========================================`);
     console.log(`  Hotel Management Backend`);
     console.log(`  Server running on: http://localhost:${PORT}`);
     console.log(`===========================================\n`);
+
+    // Seed default admin if none exists
+    try {
+        const [rows] = await pool.query("SELECT id FROM admins LIMIT 1");
+        if (rows.length === 0) {
+            await pool.query(
+                "INSERT INTO admins (username, password, name) VALUES (?, ?, ?)",
+                ["admin", "admin123", "Admin"],
+            );
+            console.log(
+                "✓ Default admin created (username: admin / password: admin123)",
+            );
+        }
+    } catch (err) {
+        console.error("✗ Admin seed failed:", err.message);
+    }
 });

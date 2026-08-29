@@ -115,7 +115,8 @@ function BookingManagement() {
     const statusStyle = (s) => {
         if (s === "completed") return "bg-emerald-100 text-emerald-700";
         if (s === "cancelled") return "bg-red-100 text-red-700";
-        if (s === "confirmed") return "bg-blue-100 text-blue-700";
+        if (s === "approved") return "bg-blue-100 text-blue-700";
+        if (s === "checked_in") return "bg-cyan-100 text-cyan-700";
         return "bg-amber-100 text-amber-700";
     };
 
@@ -152,7 +153,8 @@ function BookingManagement() {
                     {[
                         "all",
                         "pending",
-                        "confirmed",
+                        "approved",
+                        "checked_in",
                         "completed",
                         "cancelled",
                     ].map((f) => (
@@ -450,7 +452,8 @@ function BookingManagement() {
                                         className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                     >
                                         <option value="pending">Pending</option>
-                                        <option value="confirmed">Confirmed</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="checked_in">Checked In</option>
                                         <option value="completed">Completed</option>
                                         <option value="cancelled">Cancelled</option>
                                     </select>
