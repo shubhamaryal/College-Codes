@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dijkstra vs A* — Route Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0F1E;
+    --panel: #10182C;
+    --panel-line: #223055;
+    --grid-empty: #131E38;
+    --grid-wall: #1F2C4D;
+    --text: #E9EEFC;
+    --muted: #7C89AD;
+    --dijkstra: #4C6EF5;
+    --dijkstra-glow: rgba(76,110,245,0.55);
+    --astar: #FF8A3D;
+    --astar-glow: rgba(255,138,61,0.55);
+    --good: #34D399;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(1200px 700px at 50% -10%, #131E3B 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    padding: 28px 20px 40px;
+  }
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+  header{ text-align:center; margin-bottom: 22px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-size:12px;
+    color: var(--muted);
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size: clamp(28px, 4vw, 42px);
+    margin: 6px 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h1 span.d{color:var(--dijkstra)}
+  h1 span.a{color:var(--astar)}
+  .sub{ color: var(--muted); font-size:15px; max-width:640px; margin:0 auto; }
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    margin: 22px 0 26px;
+  }
+  button, select{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    color: var(--text);
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  button:hover{ border-color: var(--dijkstra); transform: translateY(-1px); }
+  button.primary{ background: linear-gradient(135deg, var(--dijkstra), var(--astar)); border:none; color:#0A0F1E; }
+  button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+  label.field{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); font-family:'JetBrains Mono', monospace; }
+
+  .arena{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 780px){ .arena{ grid-template-columns: 1fr; } }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 16px;
+    padding: 16px 16px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .panel.won{ box-shadow: 0 0 0 2px var(--good), 0 0 30px rgba(52,211,153,.35); }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .algo-name{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:17px; }
+  .algo-name.d{ color: var(--dijkstra); }
+  .algo-name.a{ color: var(--astar); }
+  .badge{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--good);
+    background: rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.4);
+    padding:2px 8px; border-radius:999px; opacity:0; transition:opacity .2s;
+  }
+  .badge.show{ opacity:1; }
+
+  canvas{ width:100%; height:auto; display:block; border-radius: 10px; background: var(--grid-empty); }
+
+  .stats{
+    display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:12px;
+  }
+  .stat{
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align:center;
+  }
+  .stat .num{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size:19px; }
+  .stat .lbl{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+
+  .legend{
+    display:flex; gap:18px; justify-content:center; flex-wrap:wrap;
+    margin-top: 22px; font-size:13px; color:var(--muted);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+  .verdict{
+    text-align:center; margin-top: 22px; font-family:'JetBrains Mono', monospace;
+    font-size: 14px; color: var(--muted); min-height: 20px;
+  }
+  .verdict b{ color: var(--good); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">AI Search Algorithms · Live Demo</div>
+    <h1><span class="d">Dijkstra</span> vs <span class="a">A*</span></h1>
+    <p class="sub">Same city grid. Same start and goal. Watch how an <em>uninformed</em> search floods outward
+      in every direction, while a <em>heuristic-guided</em> search beelines toward the target.</p>
+  </header>
+
+  <div class="controls">
+    <button class="primary" id="raceBtn">▶ Run the race</button>
+    <button id="newMazeBtn">🧱 New maze</button>
+  </div>
+
+  <div class="arena">
+    <div class="panel" id="panelD">
+      <div class="panel-head">
+        <span class="algo-name d">Dijkstra</span>
+        <span class="badge" id="badgeD">FINISHED</span>
+      </div>
+      <canvas id="canvasD"></canvas>
+      <div class="stats">
+        <div class="stat"><div class="num" id="dNodes">0</div><div class="lbl">Nodes expanded</div></div>
+        <div class="stat"><div class="num" id="dPath">–</div><div class="lbl">Path length</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panelA">
+      <div class="panel-head">
+        <span class="algo-name a">A*</span>
+        <span class="badge" id="badgeA">FINISHED</span>
+      </div>
+      <canvas id="canvasA"></canvas>
+      <div class="stats">
+        <div class="stat"><div class="num" id="aNodes">0</div><div class="lbl">Nodes expanded</div></div>
+        <div class="stat"><div class="num" id="aPath">–</div><div class="lbl">Path length</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--grid-wall)"></span> Building / obstacle</span>
+    <span><span class="dot" style="background:var(--dijkstra)"></span> Dijkstra frontier</span>
+    <span><span class="dot" style="background:var(--astar)"></span> A* frontier</span>
+    <span><span class="dot" style="background:var(--good)"></span> Final route</span>
+  </div>
+
+  <div class="verdict" id="verdict"></div>
+</div>
+
+<script>
+// ---------- Maze generation ----------
+function makeGrid(rows, cols, obstacleProb, seedFn){
+  const grid = Array.from({length: rows}, () => Array(cols).fill(0));
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    if (seedFn() < obstacleProb) grid[r][c] = 1;
+  }
+  const clear = (r,c) => { [[0,0],[0,1],[1,0],[0,-1],[-1,0]].forEach(([dr,dc])=>{
+    const nr=r+dr, nc=c+dc;
+    if(nr>=0&&nr<rows&&nc>=0&&nc<cols) grid[nr][nc]=0;
+  });};
+  clear(0,0); clear(rows-1, cols-1);
+  return grid;
+}
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+function neighbors(grid, r, c){
+  const rows=grid.length, cols=grid[0].length, out=[];
+  const deltas=[[-1,0],[1,0],[0,-1],[0,1]];
+  for(const [dr,dc] of deltas){
+    const nr=r+dr, nc=c+dc;
+    if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&grid[nr][nc]===0) out.push([nr,nc]);
+  }
+  return out;
+}
+function key(r,c){ return r+","+c; }
+
+// ---------- Priority queue (binary heap) ----------
+class MinHeap{
+  constructor(){ this.a=[]; }
+  push(item){ this.a.push(item); this._up(this.a.length-1); }
+  pop(){
+    const top=this.a[0], last=this.a.pop();
+    if(this.a.length){ this.a[0]=last; this._down(0); }
+    return top;
+  }
+  get size(){ return this.a.length; }
+  _up(i){
+    while(i>0){
+      const p=(i-1)>>1;
+      if(this.a[p][0]<=this.a[i][0]) break;
+      [this.a[p],this.a[i]]=[this.a[i],this.a[p]]; i=p;
+    }
+  }
+  _down(i){
+    const n=this.a.length;
+    while(true){
+      let l=2*i+1, r=2*i+2, s=i;
+      if(l<n && this.a[l][0]<this.a[s][0]) s=l;
+      if(r<n && this.a[r][0]<this.a[s][0]) s=r;
+      if(s===i) break;
+      [this.a[s],this.a[i]]=[this.a[i],this.a[s]]; i=s;
+    }
+  }
+}
+
+function dijkstra(grid, start, goal){
+  const t0 = performance.now();
+  const heap = new MinHeap();
+  heap.push([0, start]);
+  const costSoFar = { [key(...start)]: 0 };
+  const cameFrom = {};
+  const order = [];
+  const seen = new Set();
+  while(heap.size){
+    const [cost, cur] = heap.pop();
+    const k = key(...cur);
+    if(seen.has(k)) continue;
+    seen.add(k); order.push(cur);
+    if(cur[0]===goal[0] && cur[1]===goal[1]) break;
+    for(const [nr,nc] of neighbors(grid, cur[0], cur[1])){
+      const nk = key(nr,nc), newCost = costSoFar[k]+1;
+      if(!(nk in costSoFar) || newCost < costSoFar[nk]){
+        costSoFar[nk]=newCost; cameFrom[nk]=cur; heap.push([newCost,[nr,nc]]);
+      }
+    }
+  }
+  const time = performance.now()-t0;
+  return { order, path: reconstruct(cameFrom, start, goal), time, nodes: order.length };
+}
+function astar(grid, start, goal){
+  const t0 = performance.now();
+  const h = (r,c) => Math.abs(r-goal[0])+Math.abs(c-goal[1]);
+  const heap = new MinHeap();
+  heap.push([h(...start), start]);
+  const costSoFar = { [key(...start)]: 0 };
+  const cameFrom = {};
+  const order = [];
+  const seen = new Set();
+  while(heap.size){
+    const [, cur] = heap.pop();
+    const k = key(...cur);
+    if(seen.has(k)) continue;
+    seen.add(k); order.push(cur);
+    if(cur[0]===goal[0] && cur[1]===goal[1]) break;
+    for(const [nr,nc] of neighbors(grid, cur[0], cur[1])){
+      const nk = key(nr,nc), newCost = costSoFar[k]+1;
+      if(!(nk in costSoFar) || newCost < costSoFar[nk]){
+        costSoFar[nk]=newCost;
+        cameFrom[nk]=cur;
+        heap.push([newCost + h(nr,nc), [nr,nc]]);
+      }
+    }
+  }
+  const time = performance.now()-t0;
+  return { order, path: reconstruct(cameFrom, start, goal), time, nodes: order.length };
+}
+function reconstruct(cameFrom, start, goal){
+  let curK = key(...goal);
+  if(!(curK in cameFrom) && !(goal[0]===start[0]&&goal[1]===start[1])) return [];
+  const path=[goal];
+  let cur = goal;
+  while(!(cur[0]===start[0]&&cur[1]===start[1])){
+    const k = key(...cur);
+    if(!(k in cameFrom)) break;
+    cur = cameFrom[k];
+    path.push(cur);
+  }
+  path.reverse();
+  return path;
+}
+
+// ---------- App state ----------
+const SIZE = 28;        // fixed maze size, kept constant so the comparison is apples-to-apples
+const OBSTACLE_PROB = 0.24;
+const SPEED = 2;        // cells revealed per animation frame
+let grid, start, goal, size = SIZE, cell = 16;
+let resultD, resultA;
+let animId = null;
+
+const canvasD = document.getElementById('canvasD');
+const canvasA = document.getElementById('canvasA');
+const ctxD = canvasD.getContext('2d');
+const ctxA = canvasA.getContext('2d');
+
+function sizeCanvases(){
+  size = SIZE;
+  cell = Math.max(6, Math.floor(560 / size));
+  [canvasD, canvasA].forEach(cv=>{
+    cv.width = cell*size; cv.height = cell*size;
+  });
+}
+
+function generateMaze(){
+  sizeCanvases();
+  const seed = Math.floor(Math.random()*1e9);
+  let tries = 0, ok = false;
+  while(tries < 300){
+    const rng = mulberry32(seed+tries);
+    grid = makeGrid(size, size, OBSTACLE_PROB, rng);
+    start = [0,0]; goal = [size-1, size-1];
+    const probe = dijkstra(grid, start, goal);
+    if(probe.path.length){ ok = true; break; }
+    tries++;
+  }
+  if(!ok){ grid = makeGrid(size,size,0.05, mulberry32(seed)); start=[0,0]; goal=[size-1,size-1]; }
+  resultD = dijkstra(grid, start, goal);
+  resultA = astar(grid, start, goal);
+  drawStatic(ctxD); drawStatic(ctxA);
+  resetStats();
+}
+
+function drawStatic(ctx){
+  ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+    ctx.fillStyle = grid[r][c]===1 ? '#1F2C4D' : '#131E38';
+    ctx.fillRect(c*cell, r*cell, cell-1, cell-1);
+  }
+  markCell(ctx, start, '#34D399');
+  markCell(ctx, goal, '#FF3D71');
+}
+function markCell(ctx, [r,c], color){
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(c*cell+cell/2, r*cell+cell/2, cell*0.32, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function resetStats(){
+  document.getElementById('dNodes').textContent='0';
+  document.getElementById('aNodes').textContent='0';
+  document.getElementById('dPath').textContent='–';
+  document.getElementById('aPath').textContent='–';
+  document.getElementById('badgeD').classList.remove('show');
+  document.getElementById('badgeA').classList.remove('show');
+  document.getElementById('panelD').classList.remove('won');
+  document.getElementById('panelA').classList.remove('won');
+  document.getElementById('verdict').innerHTML = '';
+}
+
+function runRace(){
+  const speed = SPEED;
+  drawStatic(ctxD); drawStatic(ctxA);
+  resetStats();
+  document.getElementById('raceBtn').disabled = true;
+  document.getElementById('newMazeBtn').disabled = true;
+
+  let iD = 0, iA = 0;
+  let doneD = false, doneA = false;
+  let winner = null;
+
+  function stepAlgo(ctx, result, idxRef, color, glow, statPrefix){
+    let advanced = 0;
+    while(advanced < speed && idxRef.i < result.order.length){
+      const [r,c] = result.order[idxRef.i];
+      if(!((r===start[0]&&c===start[1]) || (r===goal[0]&&c===goal[1]))){
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(c*cell, r*cell, cell-1, cell-1);
+        ctx.globalAlpha = 1;
+      }
+      idxRef.i++; advanced++;
+    }
+    document.getElementById(statPrefix+'Nodes').textContent = idxRef.i;
+  }
+
+  const refD = {i:0}, refA = {i:0};
+
+  function frame(){
+    if(!doneD) stepAlgo(ctxD, resultD, refD, '#4C6EF5', null, 'd');
+    if(!doneA) stepAlgo(ctxA, resultA, refA, '#FF8A3D', null, 'a');
+
+    if(!doneD && refD.i >= resultD.order.length){
+      doneD = true;
+      drawPath(ctxD, resultD.path);
+      document.getElementById('dPath').textContent = resultD.path.length;
+      document.getElementById('badgeD').classList.add('show');
+      if(!winner){ winner='Dijkstra'; document.getElementById('panelD').classList.add('won'); }
+    }
+    if(!doneA && refA.i >= resultA.order.length){
+      doneA = true;
+      drawPath(ctxA, resultA.path);
+      document.getElementById('aPath').textContent = resultA.path.length;
+      document.getElementById('badgeA').classList.add('show');
+      if(!winner){ winner='A*'; document.getElementById('panelA').classList.add('won'); }
+    }
+
+    if(doneD && doneA){
+      const reduction = (100*(1 - resultA.nodes/resultD.nodes)).toFixed(1);
+      document.getElementById('verdict').innerHTML =
+        `<b>${winner}</b> explored its side of the map first. On this maze, A* expanded <b>${reduction}%</b> fewer nodes than Dijkstra to find the exact same ${resultA.path.length}-step optimal route.`;
+      document.getElementById('raceBtn').disabled = false;
+      document.getElementById('newMazeBtn').disabled = false;
+      return;
+    }
+    animId = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function drawPath(ctx, path){
+  if(!path.length) return;
+  ctx.strokeStyle = '#34D399';
+  ctx.lineWidth = Math.max(2, cell*0.28);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(52,211,153,0.8)';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  path.forEach(([r,c], i)=>{
+    const x=c*cell+cell/2, y=r*cell+cell/2;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  markCell(ctx, start, '#34D399');
+  markCell(ctx, goal, '#FF3D71');
+}
+
+document.getElementById('raceBtn').addEventListener('click', runRace);
+document.getElementById('newMazeBtn').addEventListener('click', generateMaze);
+
+generateMaze();
+</script>
+</body>
+</html>
